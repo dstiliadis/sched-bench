@@ -10,6 +10,15 @@ the right resource allocations in a Kubernetes cluster. The goals
 are to understand that timescales of CPU limiting and provide some
 guidance on how to define these limits in application deployments.
 
+The main conclusion that we will illustrate is that lack of controls on the timescales 
+that CPU limits are enforced by the Linux/Kubernetes scheduler settings
+can either lead to low CPU utilization or artifically constrain
+applications performance. In order to properly set limits one has to 
+understand the performance requirements in short timescales that is almost
+impossible for any parallel or multi-threaded workload. At the same time
+statistical multiplexing gain can be significantly limited and this can
+result in significant under-utilization of CPU resources.
+
 ## Kubernetes Resource Limits
 
 Kubernetes (and containers more general) allow operators to place resource
@@ -177,7 +186,8 @@ In other words, by artificially constraining the CPU allocation of a
 POD at small timescales we significantly limit the ability of the 
 system to take advantage of statistical multiplexing gains. This limitation
 leads to lower overall resource utilization that can translate to either 
-higher costs or lower performance.
+higher costs or lower performance. Limits are useful only if we know
+the right timescales to use.
 
 ## Know Your Limits
 
