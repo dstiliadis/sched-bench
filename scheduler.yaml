@@ -1,18 +1,29 @@
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: scheduler
 spec:
-  containers:
-  - name: scheduler
-    image: dimitrihub/scheduler
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bench
+  template:
+    metadata:
+      labels:
+        app: bench
+    spec:
+      nodeSelector:
+        target: enabled
+      containers:
+      - name: scheduler
+        image: dimitrihub/scheduler
 #    env:
 #        - name: GOMAXPROCS
 #          value: "1"
-    resources:
-      requests:
-        memory: "64Mi"
-        cpu: "250m"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
       # limits:
       #   memory: "128Mi"
       #   cpu: "2000m"

@@ -121,6 +121,64 @@ intervals when no caps or limits are applied is well below 1 core. However,
 because the instantaneous CPU utilization over shorter timescales exceed
 the limit, a cap singificantly deteriotes the performance.
 
+### Oversubscribing and Statistical Multiplexing
+
+So far we were trying to estimate the CPU load by applying limits and 
+we noticed that when we apply limits both CPU utilization and the 
+actual work that our program was doing was reduced. In order to 
+illustrate this point better, we now run four instances of our
+program without any limits. This can be easily achieved by a deployment
+file:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduler
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bench
+  template:
+    metadata:
+      labels:
+        app: bench
+    spec:
+      nodeSelector:
+        target: enabled
+      containers:
+      - name: scheduler
+        image: dimitrihub/scheduler
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+```
+
+Note, that because of the nodeSelector we make sure that all PODS are 
+placed in the same node. If notice that logs of the PODS we will 
+see that since there is no limit, the aggregate goodput of all PODs
+is now at 16M. In other words, although we are running more processes
+the CPU is better utilized and we can achieve better work. At the same
+time, if we plot the aggregate CPU utilization of the node we notice 
+that we have not exceeded the capacity of the node.
+
+![](images/perf-multi-graph.png)
+
+In other words, by not placing any limits we have achieved a higher
+overall system utilization without any degradation in performance.
+
+On the other hand, if we re-introduce the limits, the statistical 
+multiplexing gain is removed, CPUs are idle and the programs take 
+a longer time to complete. 
+
+In other words, by artificially constraining the CPU allocation of a 
+POD at small timescales we significantly limit the ability of the 
+system to take advantage of statistical multiplexing gains. This limitation
+leads to lower overall resource utilization that can translate to either 
+higher costs or lower performance.
+
 ## Know Your Limits
 
 Unfortunately it is extremely hard for a software team to estimate the 
