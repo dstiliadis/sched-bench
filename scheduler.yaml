@@ -17,9 +17,6 @@ spec:
       containers:
       - name: scheduler
         image: dimitrihub/scheduler
-#    env:
-#        - name: GOMAXPROCS
-#          value: "1"
         resources:
           requests:
             memory: "64Mi"
