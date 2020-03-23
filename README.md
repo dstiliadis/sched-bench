@@ -1,4 +1,4 @@
-# Kubernetes Scheduling, Timescales and Effective Bandwidth
+# Kubernetes Scheduling and Timescales
 
 In our effort to optimize and understand better our platforms we had 
 to enter the rabithole of understanding limits and resource allocations
@@ -45,10 +45,11 @@ for an application in a way that does not introduce artificial bottlenects. Espe
 for highly multi-threaded or parallel applications, instantaneous load can fluctuate dramatically
 over time, depending on the parallel invocation of threads.
 
-### Resource Limit Failure Example
+### A Synthetic Benchmark 
 
 In order to better illustrate the problems with the limit calculation
 we wrote a small program that in a controlled way excersizes these limits.
+(https://www.github.com/dstiliadis/sched-bench)
 The program, written in Go, instantiates 4 parallel Go-routines that 
 execute a CPU bound addition in a loop for 200ms and then sleep for 
 2 seconds. We chose this synthetic benchmark in order to illustrate the problem.
@@ -99,7 +100,7 @@ spec:
         cpu: "2000m"
 ```
 
-The goodput of the program was immediately reduced by almost 50% and each
+The "goodput" of the program was immediately reduced by almost 50% and each
 Go-routine was now cappated at about 500-600K iterations in 200ms. The total
 goodput was reduced to approximately 2.3M. 
 
