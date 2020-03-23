@@ -214,6 +214,14 @@ the statisticam multiplexing gains. If not all applications are bursting
 at the same time, then CPU utilization will be low even though 
 application performance can be significantly impacted.
 
+3. Explicitly control paralellism of applications so that any limits 
+in Kubernetes match an expected behavior. In this case an applicaiton
+is tested with specific parallelism limits (as an example by limiting
+COMAXPROCS in Go) and in this case the Kubernetes deployment will match
+the limits of the application. In this case, performance is predictable,
+but the statistical multiplexing gains are also limited, and therefore
+overall CPU utilization will be limited as well.
+
 Essentially we are seing the same performance tradeoffs that the networking
 world has been studying for years and are now becoming even more critical
 with Variable Bit Rate video traffic. Hard limits mean low CPU utilization
