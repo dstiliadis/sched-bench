@@ -114,6 +114,8 @@ was derived in the nodes using:
 top -b -n 1000 -d 0.1 -p 2053218 | grep scheduler
 ```
 
+![](images/perf-graph.png)
+
 As it can be seen in the figure, the average utilization over 1 second
 intervals when no caps or limits are applied is well below 1 core. However,
 because the instantaneous CPU utilization over shorter timescales exceed
