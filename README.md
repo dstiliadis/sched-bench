@@ -225,7 +225,7 @@ The arrival traffic uses 64 independent clients.
 The server CPU utilization where there are no limits and over
 different time-scales is illustrated in the figure below:
 
-~[](images/perf-web-server.png)
+![](images/perf-web-server.png)
 
 As it can be noticed in the un-constrained case the CPU utilization
 over longer time-scales is below 2 cores, although the 100ms CPU 
