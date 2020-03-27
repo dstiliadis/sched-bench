@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      labels:
+        app: client
+    spec:
+      nodeSelector:
+        target: client  
+      containers:
+      - name: scheduler
+        imagePullPolicy: Always
+        image: dimitrihub/benchclient
+        ports:
+        - containerPort: 80
+        env:
+        - name: "ON"
+          value: "0.09"
+        - name: "OFF"
+          value: "0.01"
+        - name: "THREADS"
+          value: "64"
+        - name: "URL"
+          value: "http://server:8123"
+        - name: "DURATION"
+          value: "1m"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          # limits:
+          #   memory: "128Mi"
+          #   cpu: "2000m"

@@ -189,46 +189,110 @@ leads to lower overall resource utilization that can translate to either
 higher costs or lower performance. Limits are useful only if we know
 the right timescales to use.
 
+## Performance of a Simple Web Server
+
+We now extend the analylis with a simple Web application serving
+API calls that one can argue represents a typical microservice.
+For simplicity we assume that all API calls return immediately
+and we do not account in the beginning for variable processing
+times of API calls. We also create a simple client that issues
+API calls following a Markov On-Off process. 
+
+### Traffic Client
+
+The traffic client simulates a number of independent Markov-modulated
+on/off processes in an attempt to simulate a real world environment.
+Each client starts from the ON stat and makes API requests as fast
+it can. The time in the ON state is determined through an exponential
+distribution. After the client is complete, it enters the OFF 
+state for an exponentially averaged time, where it remains idle.
+We super-impose multiple of these processes in order to create a 
+realistic arrival traffic. 
+
+## Performance Analysis
+
+In order to demonstrate the effects of cPU limiting we deploy the 
+client and server in different nodes of a Kubernetes cluster 
+using 8-core machines in GCP. Initially we deploy the server
+without limits and then we introduce limits of 2, 3, and 4 cores.
+
+We chose the arrival rate so that in the average (over 5 seconds
+intervals) an unrestricted server will have a utilization of 
+less than 180% (and essentially less than 2 cores). We then supply
+traffic and measure the average CPU utilization, the rate of API
+calls/second served as well as the average latency of the API calls.
+The arrival traffic uses 64 independent clients.
+The server CPU utilization where there are no limits and over
+different time-scales is illustrated in the figure below:
+
+~[](images/perf-web-server.png)
+
+As it can be noticed in the un-constrained case the CPU utilization
+over longer time-scales is below 2 cores, although the 100ms CPU 
+utilization can reach a maximum of 3 cores. The instantaneous utilization
+obviously depends on the number of conncurent active clients and
+their on/off state.
+
+We then repeat the same experiment by limiting the CPU utilization
+through the Kubernetes limit parameters to 2, 3, and four cores.
+The aggregate results are shown in the table below:
+
+| Metric  | Unlimited | 2-cores  | 3-cores | 4-cores |
+| --- | --- | --- | --- |--- |
+| API calls /second | 22969 | 21563 | 22000 | 22500 |
+| Average Latency   | 14.3us | 30.67us |  16.2us| 16.1us| 
+
+As we can see from the above results, given our traffic patterns restricting the cores to two reduced the API rate by 5%, but most significantly increased the average latency by 100%. Essentially our clients were observing double the latencies for executing the APIs. 
+
+### Multi-hop Impacts
+
+Note that in a micro-service environment where processing a user request might involve the execution of several micro-services potentially in a series of calls the above variations can have dramatic results. It is not only that the latency of a server is increased, but clients will also notice additive latencies and potentially slower CPU utilization. The multi-hop impact requires additional data that we will provide in a subsequent blog post.
+
+
 ## Know Your Limits
 
 Unfortunately it is extremely hard for a software team to estimate the 
-instantaneous limits of an application. Even though in the synthetic 
-application we are able to explicitly determine the degree of parallelism
+instantaneous limits of an application. In several instances engineering
+teams might calculated longer term averages given specific test workloads,
+but they will often not match those with the scheduling time-scales. 
+Even though in the synthetic application we are able to explicitly determine the degree of parallelism
 and active/sleeping timeframes in any common use it is not possible 
-to estimate the effect of limits on the performance of applications. In 
-some cases designers are able to estimate or predict long term averages
-(over seconds), but are hardly able to predict short term spikes.
+to estimate the effect of limits on the performance of applications. 
 
-One has two choices in this case:
+One has a couple of choices on properly setting limits:
 
 1. Launch applications without limits, actively monitor nodes and hope
 that none of the microservices violates the behavior. Given that PODs
 from multiple users and/or namespaces can scheduled in the same node
-though provides very little comfort to operations teams on any CPU 
-boundaries.
+though, this approach provides very little comfort to operations teams on any CPU 
+boundaries. More importantly in any soft multi-tenant environment 
+developers will not be able to see the complete effects on applications
+since nodes are shared by several users.
 
 2. Correctly estimate the limits. We believe that in most cases
 estimating parallelism at 100ms intervals (or for that matter any short
-timeframe) will be very hard for any developer and in essense limits 
-the statisticam multiplexing gains. If not all applications are bursting
-at the same time, then CPU utilization will be low even though 
-application performance can be significantly impacted.
+timeframe) will be very hard for any application and in essense limits 
+the statisticam multiplexing gains. In most scenarios not all micro-services
+are bursting in terms of CPU utilization at the same time and taking
+advantage of statistical multiplexing gains is critical to maintain
+a relatively high overall node utilization.
 
 3. Explicitly control paralellism of applications so that any limits 
 in Kubernetes match an expected behavior. In this case an applicaiton
 is tested with specific parallelism limits (as an example by limiting
 COMAXPROCS in Go) and in this case the Kubernetes deployment will match
-the limits of the application. In this case, performance is predictable,
+the limits of the application. When this approach is chosen, performance is predictable,
 but the statistical multiplexing gains are also limited, and therefore
 overall CPU utilization will be limited as well.
 
 Essentially we are seing the same performance tradeoffs that the networking
-world has been studying for years and are now becoming even more critical
-with Variable Bit Rate video traffic. Hard limits mean low CPU utilization
-and a performance impact. No limits result in better CPU utilization
-but uncontrolled behavior. 
+world has been studying for years. Hard limits mean low CPU utilization
+and potentially longer latencies for bursty applications. No limits result in 
+better CPU utilization but uncontrolled behavior and no separation between
+applications.
 
 As a first step, a better balance is to increase the time of averaging 
 in your Kubernetes clusters since at least you can have a more predictable
 performance boundary. Longer term, the CPU scheduling and cgroup limits 
 need a lot of work to account for statistical multiplexing gains. 
+
