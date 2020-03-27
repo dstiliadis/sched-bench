@@ -200,6 +200,8 @@ API calls following a Markov On-Off process.
 
 ### Traffic Client
 
+![](images/client.png)
+
 The traffic client simulates a number of independent Markov-modulated
 on/off processes in an attempt to simulate a real world environment.
 Each client starts from the ON stat and makes API requests as fast
